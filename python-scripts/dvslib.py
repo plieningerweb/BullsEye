@@ -4,11 +4,14 @@ import matplotlib.animation as animation
 
 import time
 
+from libaedata.aedata import aedata
+from libaedata.aedata import aefile
+
 class DvsDataHandler(object):
-    def __init__(self, aedata, calculator):
+    def __init__(self, filename, calculator):
         self.calculator = calculator
         self.image = np.zeros((128, 128), dtype=float)
-        self.aedata = aedata
+        self.aedata = aedata(aefile(filename, max_events=100000))
         self.packageStart = 0
 
     def clear_image(self):
