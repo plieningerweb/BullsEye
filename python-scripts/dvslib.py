@@ -14,23 +14,26 @@ class DvsDataHandler(object):
         self.aedata = aedata(aefile(filename, max_events=100000))
         self.packageStart = 0
 
+        self.packageSize = 20
+        self.packageStep = 20
+
     def clear_image(self):
         #multiply all pixels with 0 so they are 0
         self.image *= 0
 
-    def doCalculation(self,x,y,sign):
+    def doCalculation(self,x,y,sign,microtime):
         #do calcuation with new event
         if self.calculator is not None:
-            self.calculator.calculate(self,x,y,sign)
+            self.calculator.calculate(self,x,y,sign,microtime)
     
     def drawCross(self,x,y):
         #first cross:
         width = 1
         #horizontal lilne
-        self.image[x-width:x+width] = -0.5
+        self.image[x-width:x+width] -= 0.1
         
         #vertical one
-        self.image[:,y-width:y+width] = -0.5
+        self.image[:,y-width:y+width] -= 0.1
     
     def calculatePackage(self):
         if self.calculator is not None:
@@ -45,43 +48,29 @@ class DvsDataHandler(object):
         end = start+step
         #len(data.x)
         if(end < len(data.x)):    
-            xp = data.x[start:end]
-            yp = data.y[start:end]
-            tp = data.t[start:end]
-            timestamps = data.ts[start:end]
-
             print("package start index",start)
-            print("package timestamp start",timestamps[0])
+            print("package timestamp start",data.ts[start])
 
-            for i in range(len(xp)):
-                #print("i",i,start+i,"y",yp[i],xp[i],tp[i])
-                y = int(yp[i])
-                x = int(xp[i])
+            n = start
+            c = 0
+            while ((n < len(data.x)) and (c < step)):
+                y = int(data.y[n])
+                x = int(data.x[n])
                 if(x > 127):
                     x = 127
                 if(y > 127):
                     y = 127
-                #x = 127 - x
-                self.image[x,y] = +1 if tp[i] else -1
-                #print("Y,X IS",y,x,self.image[y,x])
-                #self.doCalculation(x,y,tp[i])
 
-                #maybe consider time
-                #offset = time.time() - t
+                self.image[x,y] = +1 if data.t[n] else -1
+                self.doCalculation(x,y,data.t[n],data.ts[n])
 
-                
+                print("package was ",n)
+                #next package
+                c += 1
+                n = start + c
+
+
             start += frameJump
-            self.image = np.rot90(self.image,1)
-            
-            #iterate over points and do calculation
-            #todo: not very fast
-            it = np.nditer(self.image, flags=['multi_index'])
-            while not it.finished:
-                if(it[0] != 0):
-                    self.doCalculation(it.multi_index[0],it.multi_index[1],it[0])
-                    #print "%d <%s>" % (it[0], it.multi_index)
-                it.iternext()
-                
         else:
             raise Exception("end of data")
         
@@ -97,6 +86,7 @@ class DvsDataViewer(object):
         self.fig.canvas.mpl_connect('button_press_event', self.onClick)
         vmin, vmax = -1, 1
         self.im = plt.imshow(self.getImage(), cmap=plt.get_cmap('gray'), vmin=vmin, vmax=vmax, interpolation='none')
+
         
         self.ani = animation.FuncAnimation(self.fig, self.updatefig, interval=20, blit=True)
         plt.show()
@@ -109,8 +99,10 @@ class DvsDataViewer(object):
         return self.im,
     
     def getImage(self):
-        return self.data.image
+        #rotate image for better visualization here
+        return np.rot90(self.data.image,1)
+        #return self.data.image
     
     def onClick(self,event):
         #on every click on the plot, continue one frame
-        self.data.next_package(20,20)
+        self.data.next_package(self.data.packageSize, self.data.packageStep)
