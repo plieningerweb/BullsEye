@@ -108,8 +108,8 @@ handler = DvsDataHandler(datafile,calculator)
 #set beginning event index to start with
 handler.packageStart = 5250
 
-handler.packageSize = 200
-handler.packageStep = 200
+handler.packageSize = 800
+handler.packageStep = 800
 
 #visualize
 #click on window will show next package of events
