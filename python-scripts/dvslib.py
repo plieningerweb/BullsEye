@@ -61,7 +61,9 @@ class DvsDataHandler(object):
                 if(y > 127):
                     y = 127
 
-                self.image[x,y] = +1 if data.t[n] else -1
+                #only set image event to -1 if not +1
+                if self.image[x,y] != +1:
+                    self.image[x,y] = +1 if data.t[n] else -1
                 self.doCalculation(x,y,data.t[n],data.ts[n])
 
                 print("package was ",n)
