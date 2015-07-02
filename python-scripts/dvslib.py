@@ -11,7 +11,7 @@ class DvsDataHandler(object):
     def __init__(self, filename, calculator):
         self.calculator = calculator
         self.image = np.zeros((128, 128), dtype=float)
-        self.aedata = aedata(aefile(filename, max_events=100000))
+        self.aedata = aedata(aefile(filename, max_events=2000000))
         self.packageStart = 0
 
         self.packageSize = 20
@@ -34,6 +34,24 @@ class DvsDataHandler(object):
         
         #vertical one
         self.image[:,y-width:y+width] -= 0.1
+
+    def drawMarker(self,x,y):
+        #first cross:
+        linewidth = 1
+        height = 10
+        width = 10
+
+        #horizontal line
+        for i in range(x-width,x+width):
+            self.image[i,y] -= 0.2
+
+        for i in range(y-height,y+height):
+            self.image[x,i] -= 0.2
+
+        #self.image[x-width:x+width] -= 0.1
+        
+        #vertical one
+        #self.image[:,y-width:y+width] -= 0.1
     
     def calculatePackage(self):
         if self.calculator is not None:

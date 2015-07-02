@@ -86,7 +86,8 @@ class Calculator():
 
         #draw cross for every item
         for c in self.crosses:
-            recordProvider.drawCross( int(c[0]),int(c[1]))
+#            recordProvider.drawCross( int(c[0]),int(c[1]))
+            recordProvider.drawMarker( int(c[0]),int(c[1]))
         
         recordProvider.drawCross( int(x),int(y))
 #        self.__init__()
@@ -108,8 +109,8 @@ handler = DvsDataHandler(datafile,calculator)
 #set beginning event index to start with
 handler.packageStart = 5250
 
-handler.packageSize = 800
-handler.packageStep = 800
+handler.packageSize = 3000
+handler.packageStep = 3000
 
 #visualize
 #click on window will show next package of events
