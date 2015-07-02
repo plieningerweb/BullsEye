@@ -1,0 +1,9 @@
+sync33 calibrate and hit master
+dart at event: 2865484 27,883sec
+
+sync33 calibrate and hit slave
+dart at event: 1799795 27,801sec
+
+gute verwendbare daten
+
+
