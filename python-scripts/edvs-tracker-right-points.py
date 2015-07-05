@@ -199,17 +199,63 @@ dartTimeDiff = dart2RecognizedTime - dart1RecognizedTime
 print("markers1",calculator.crosses)
 print("markers2",calculator2.crosses)
 
+threeD_points_pixels = []
+
 for m in calculator.crosses:
-    print("m of markers1 is",m)
-    print("find marker with time X in markers2",m[1],m[1]+dartTimeDiff)
+    #print("m of markers1 is",m)
+    #print("find marker with time X in markers2",m[1],m[1]+dartTimeDiff)
 
     for n in calculator2.crosses:
-        print("n in markers2 is",n)
+        #print("n in markers2 is",n)
         diff = abs(n[1]-(m[1]+dartTimeDiff))
-        print("diff is",diff)
+        #print("diff is",diff)
         if diff < 1000:
             print("match < 1ms")
+            threeD_points_pixels.append((m[0],n[0]))
 
+#convert to 3D point in space
+def convert_px_to_space_3D(threeD_points_pixels):
+	"""Converts pixel values of two cameras to 3D coordinates.
+Input: List of points with pixels values, each a tuple:
+	point: ([R.xp,R.yp],[L.xp,L.yp])
+Output: List of points with space values, each a tuple:
+	point: (x,y,z,z_prime)"""
+	#settings
+	angle_per_px = 0.36 #degrees
+	width_px = 128
+	delta = 45 #degrees
+	d = 120 #cm
+	H = d/2
+	
+	angle_per_px *= np.pi/180.	#convert to radian
+	delta *= np.pi/180.			#convert to radian
+	
+	threeD_points_space = []
+	center_offset_px = (width_px / 2.) -0.5
+	for point in threeD_points_pixels:
+		#point: ([R.xp,R.yp],[L.xp,L.yp])
+		#right camera
+		gamma_r = angle_per_px * (point[0][0] - center_offset_px)
+		bita_r = angle_per_px * (point[0][1] - center_offset_px)
+		#left camera
+		gamma_l = angle_per_px * (point[1][0] - center_offset_px)
+		alpha_l = angle_per_px * (point[1][1] - center_offset_px)
+		#convert to space
+		d_l = d / ( 1. + (np.tan(delta-alpha_l)/np.tan(delta-bita_r)) )
+		x = d_l - d
+		y = np.tan(delta - alpha_l) * d_l - H
+		z = np.tan(gamma_l) * np.cos(alpha_l) * d_l / np.cos(delta - alpha_l)
+		z_prime = - np.tan(gamma_r) * np.cos(bita_r) * (d-d_l) / np.cos(delta - bita_r)
+		#save
+		threeD_points_space.append([x,y,z,z_prime])
+	
+	return threeD_points_space
+
+print threeD_points_pixels
+
+threeD_points_space = convert_px_to_space_3D(threeD_points_pixels)
+
+print threeD_points_space
 
 #scipy optimize curve fit:
 #http://python4mpia.github.io/fitting_data/least-squares-fitting.html

@@ -40,7 +40,7 @@ class Calculator():
         
         
 
-datafile = '/home/main/edvs-dart/datfiles/DVS128-2015-06-15T16-50-30+0200-0.aedat'
+datafile = '../ITQ-2015-06-25/rechts-02.aedat'
 
 calculator = Calculator()
 #open file handler with data calculator and aedata file
