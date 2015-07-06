@@ -201,10 +201,9 @@ for m in calculator.crosses:
             print("n is",n)
             matches.append([m,n])
 
-#now matches contains the x,y events of both cameras
-#this can be now used to calculate the 3d point of the event
+threeD_points_space = convert_px_to_space_3D(threeD_points_pixels)
 
-#@silvan, your part :)
+print threeD_points_space
 
 #later we could then use 3 points to fit a curve in 3d space
 #scipy optimize curve fit:
