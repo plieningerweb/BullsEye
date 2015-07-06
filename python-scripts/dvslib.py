@@ -11,7 +11,7 @@ class DvsDataHandler(object):
     def __init__(self, filename, calculator):
         self.calculator = calculator
         self.image = np.zeros((128, 128), dtype=float)
-        self.aedata = aedata(aefile(filename, max_events=2000000))
+        self.aedata = aedata(aefile(filename, max_events=3000000))
         self.packageStart = 0
 
         self.packageSize = 20

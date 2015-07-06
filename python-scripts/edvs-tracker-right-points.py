@@ -82,7 +82,7 @@ class Calculator():
                 self.milliSec = millitime
                 
                 print("add marker cross")
-                self.crosses.append((self.mean,microtime))
+                self.crosses.append((self.mean,microtime,millitime))
                 print("markers are",self.crosses)
         
         return self
@@ -112,14 +112,14 @@ class Calculator():
 #time from 314.37 to 314.49 seconds
 
 datafile = '../ITQ-2015-06-25/rechts-02.aedat'
-datafile = '../ITQ-2015-06-25/rechts-02.aedat'
+datafile = '../testdata-2015-07-02/sync33-calibrateandhit-slave.aedat'
 
 calculator = Calculator()
 #open file handler with data calculator and aedata file
 handler = DvsDataHandler(datafile,calculator)
 
 #set beginning event index to start with
-handler.packageStart = 5250
+handler.packageStart = 1799795 
 
 handler.packageSize = 300
 handler.packageStep = 300
@@ -147,13 +147,14 @@ view = DvsDataViewer(handler)
 #fisrt event: 1648
 #last event: 3742
 datafile2 = '../ITQ-2015-06-25/links-02.aedat'
+datafile2 = '../testdata-2015-07-02/sync33-calibrateandhit-master.aedat'
 
 calculator2 = Calculator()
 #open file handler with data calculator and aedata file
 handler2 = DvsDataHandler(datafile2,calculator2)
 
 #set beginning event index to start with
-handler2.packageStart = 1648 
+handler2.packageStart = 2864484 
 
 handler2.packageSize = 300
 handler2.packageStep = 300
@@ -184,32 +185,27 @@ class DvsDataViewerBoth(object):
 
 viewBoth = DvsDataViewerBoth(view.data,view2.data)
 
-#dart found in view2 at package 1691
-#time of package: 300221859.0, 
-dart2RecognizedTime = 300221859.0
-
-
-#dart found in view1 at package 5305
-#time of package: 314293710.0,
-dart1RecognizedTime = 314293710.0
-
-dartTimeDiff = dart2RecognizedTime - dart1RecognizedTime
 
 #get markers of both
 print("markers1",calculator.crosses)
 print("markers2",calculator2.crosses)
 
+#both files have same timestamps (snychronzied recording)
+matches = []
 for m in calculator.crosses:
     print("m of markers1 is",m)
-    print("find marker with time X in markers2",m[1],m[1]+dartTimeDiff)
 
     for n in calculator2.crosses:
-        print("n in markers2 is",n)
-        diff = abs(n[1]-(m[1]+dartTimeDiff))
-        print("diff is",diff)
-        if diff < 1000:
-            print("match < 1ms")
+        if m[2] == n[2]:
+            print("match in same 1ms")
+            print("n is",n)
+            matches.append([m,n])
 
+#now matches contains the x,y events of both cameras
+#this can be now used to calculate the 3d point of the event
 
+#@silvan, your part :)
+
+#later we could then use 3 points to fit a curve in 3d space
 #scipy optimize curve fit:
 #http://python4mpia.github.io/fitting_data/least-squares-fitting.html
