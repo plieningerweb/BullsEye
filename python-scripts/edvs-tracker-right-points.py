@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- Mode: Python; tab-width: 4; coding: utf8 -*-
 # coding: utf-8
 #vim python identation
 #http://stackoverflow.com/questions/9718405/python-indentation-borked
@@ -5,7 +7,7 @@
 from dvslib import DvsDataViewer
 from dvslib import DvsDataHandler
 
-
+import scipy.optimize as optimize
 import numpy as np
 
 class Calculator():
@@ -111,15 +113,17 @@ class Calculator():
 #dart is coming from left and going on the upper half throuh the window
 #time from 314.37 to 314.49 seconds
 
-datafile = '../ITQ-2015-06-25/rechts-02.aedat'
-datafile = '../testdata-2015-07-02/sync33-calibrateandhit-slave.aedat'
+#datafile = '../ITQ-2015-06-25/rechts-02.aedat'
+#datafile = '../testdata-2015-07-02/sync33-calibrateandhit-slave.aedat'
+datafile = '../FinalSetup-2015-07-06/DVS128-2015-07-06T19-58-41+0200-0336-0.aedat'
 
 calculator = Calculator()
 #open file handler with data calculator and aedata file
 handler = DvsDataHandler(datafile,calculator)
 
 #set beginning event index to start with
-handler.packageStart = 1799795 
+#handler.packageStart = 1799795 
+handler.packageStart = 0
 
 handler.packageSize = 300
 handler.packageStep = 300
@@ -146,15 +150,17 @@ view = DvsDataViewer(handler)
 #left side
 #fisrt event: 1648
 #last event: 3742
-datafile2 = '../ITQ-2015-06-25/links-02.aedat'
-datafile2 = '../testdata-2015-07-02/sync33-calibrateandhit-master.aedat'
+#datafile2 = '../ITQ-2015-06-25/links-02.aedat'
+#datafile2 = '../testdata-2015-07-02/sync33-calibrateandhit-master.aedat'
+datafile2 = '../FinalSetup-2015-07-06/DVS128-2015-07-06T19-58-38+0200-0123-0.aedat'
 
 calculator2 = Calculator()
 #open file handler with data calculator and aedata file
 handler2 = DvsDataHandler(datafile2,calculator2)
 
 #set beginning event index to start with
-handler2.packageStart = 2864484 
+#handler2.packageStart = 2864484 
+handler2.packageStart = 0
 
 handler2.packageSize = 300
 handler2.packageStep = 300
@@ -199,7 +205,7 @@ for m in calculator.crosses:
         if m[2] == n[2]:
             print("match in same 1ms")
             print("n is",n)
-            matches.append([m,n])
+            matches.append([m[0],n[0]])
 
 
 #convert to 3D point in space
@@ -207,13 +213,13 @@ def convert_px_to_space_3D(threeD_points_pixels):
     """Converts pixel values of two cameras to 3D coordinates.
 Input: List of points with pixels values, each a tuple:
     point: ([R.xp,R.yp],[L.xp,L.yp])
-Output: List of points with space values, each a tuple:
+Output: Numpy array of points with space values, each a array:
     point: (x,y,z,z_prime)"""
     #settings
     angle_per_px = 0.36 #degrees
     width_px = 128
     delta = 45 #degrees
-    d = 120 #cm
+    d = 130 #cm
     H = d/2
     
     angle_per_px *= np.pi/180.  #convert to radian
@@ -236,14 +242,36 @@ Output: List of points with space values, each a tuple:
         z = np.tan(gamma_l) * np.cos(alpha_l) * d_l / np.cos(delta - alpha_l)
         z_prime = - np.tan(gamma_r) * np.cos(bita_r) * (d-d_l) / np.cos(delta - bita_r)
         #save
-        threeD_points_space.append([x,y,z,z_prime])
+        threeD_points_space.append([x[0],y[0],z[0],z_prime[0]])
     
-    return threeD_points_space
+    return np.array(threeD_points_space)
+
+def estimate_hit_point(threeD_points_space):
+    """Input: Numpy array of points with space values, each a array:
+    point: (x,y,z,z_prime)"""
+    #settings
+    D = 180 #cm - distance between cameras and dart board
+    
+    def fit_x_over_z(z, x_a, m):
+        return x_a + m*z
+    def fit_y_over_z(z, y_a, b, a):
+        return y_a + b*z + a*z*z
+    x = threeD_points_space[:,0]
+    y = threeD_points_space[:,1]
+    #average z-values and transform to dart board coordinates
+    z = (threeD_points_space[:,2]+threeD_points_space[:,3])/2 + D
+    result_fit_x_over_z = optimize.curve_fit(fit_x_over_z, z, x)
+    x_a = result_fit_x_over_z[0][0]
+    result_fit_y_over_z = optimize.curve_fit(fit_y_over_z, z, y)
+    y_a = result_fit_y_over_z[0][0]
+    print "x_a = {}, y_a = {}".format(x_a,y_a)
 
 
 threeD_points_space = convert_px_to_space_3D(matches)
 
 print threeD_points_space
+
+estimate_hit_point(threeD_points_space)
 
 #later we could then use 3 points to fit a curve in 3d space
 #scipy optimize curve fit:
