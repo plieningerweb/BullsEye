@@ -116,6 +116,7 @@ class Calculator():
 #datafile = '../ITQ-2015-06-25/rechts-02.aedat'
 #datafile = '../testdata-2015-07-02/sync33-calibrateandhit-slave.aedat'
 datafile = '../FinalSetup-2015-07-06/DVS128-2015-07-06T19-58-41+0200-0336-0.aedat'
+datafile = '../FinalSetup-2015-07-06/DVS128-2015-07-06T20-12-54+0200-0336-0.aedat'
 
 calculator = Calculator()
 #open file handler with data calculator and aedata file
@@ -153,6 +154,7 @@ view = DvsDataViewer(handler)
 #datafile2 = '../ITQ-2015-06-25/links-02.aedat'
 #datafile2 = '../testdata-2015-07-02/sync33-calibrateandhit-master.aedat'
 datafile2 = '../FinalSetup-2015-07-06/DVS128-2015-07-06T19-58-38+0200-0123-0.aedat'
+datafile2 = '../FinalSetup-2015-07-06/DVS128-2015-07-06T20-12-56+0200-0123-0.aedat'
 
 calculator2 = Calculator()
 #open file handler with data calculator and aedata file
