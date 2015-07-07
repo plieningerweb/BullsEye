@@ -207,16 +207,16 @@ for m in calculator.crosses:
         if m[2] == n[2]:
             print("match in same 1ms")
             print("n is",n)
-            matches.append([m[0],n[0]])
+            matches.append([m[0],n[0],m[1],m[2]])
 
 
 #convert to 3D point in space
 def convert_px_to_space_3D(threeD_points_pixels):
     """Converts pixel values of two cameras to 3D coordinates.
 Input: List of points with pixels values, each a tuple:
-    point: ([R.xp,R.yp],[L.xp,L.yp])
+    point: ([R.xp,R.yp],[L.xp,L.yp],microtime,millitime)
 Output: Numpy array of points with space values, each a array:
-    point: (x,y,z,z_prime)"""
+    point: (x,y,z,z_prime,microtime,millitime)"""
     #settings
     angle_per_px = 0.36 #degrees
     width_px = 128
@@ -244,13 +244,13 @@ Output: Numpy array of points with space values, each a array:
         z = np.tan(gamma_l) * np.cos(alpha_l) * d_l / np.cos(delta - alpha_l)
         z_prime = - np.tan(gamma_r) * np.cos(bita_r) * (d-d_l) / np.cos(delta - bita_r)
         #save
-        threeD_points_space.append([x[0],y[0],z[0],z_prime[0]])
+        threeD_points_space.append([x[0],y[0],z[0],z_prime[0],point[2],point[3]])
     
     return np.array(threeD_points_space)
 
 def estimate_hit_point(threeD_points_space):
     """Input: Numpy array of points with space values, each a array:
-    point: (x,y,z,z_prime)"""
+    point: (x,y,z,z_prime,microtime,millitime)"""
     #settings
     D = 180 #cm - distance between cameras and dart board
     
@@ -269,12 +269,54 @@ def estimate_hit_point(threeD_points_space):
     print "x_a = {}, y_a = {}".format(x_a,y_a)
 
 
+def estimate_hit_point_via_time(threeD_points_space):
+    """Input: Numpy array of points with space values, each a array:
+    point: (x,y,z,z_prime,microtime,millitime)"""
+    #settings
+    D = 180 #cm - distance between cameras and dart board
+    g = -981 #cm/s^2 - acceleration due to gravity
+    
+    
+    x = threeD_points_space[:,0]
+    y = threeD_points_space[:,1]
+    #average z-values and transform to dart board coordinates
+    z = (threeD_points_space[:,2]+threeD_points_space[:,3])/2 + D
+    #rescale time to first value in data
+    t = threeD_points_space[:,4] - threeD_points_space[0,4]
+    
+    def fit_x_over_t(t,x_0,v_x):
+        return x_0 + v_x * t
+    def fit_y_over_t(t,y_0,v_y):
+        return y_0 + v_y * t + g * t * t
+    def fit_z_over_t(t,z_0,v_z):
+        return z_0 + v_z * t
+    
+    result_fit_x_over_t = optimize.curve_fit(fit_x_over_t, t, x)
+    x_0 = result_fit_x_over_t[0][0]
+    v_x = result_fit_x_over_t[0][1]
+    
+    result_fit_y_over_t = optimize.curve_fit(fit_y_over_t, t, y)
+    y_0 = result_fit_y_over_t[0][0]
+    v_y = result_fit_y_over_t[0][1]
+    
+    result_fit_z_over_t = optimize.curve_fit(fit_z_over_t, t, z)
+    z_0 = result_fit_z_over_t[0][0]
+    v_z = result_fit_z_over_t[0][1]
+    
+    t_a = - z_0 / v_z
+    x_a = fit_x_over_t(t_a,x_0,v_x)
+    y_a = fit_y_over_t(t_a,y_0,v_y)
+    print "x_a = {}, y_a = {}".format(x_a,y_a)
+
+
 threeD_points_space = convert_px_to_space_3D(matches)
 
 print threeD_points_space
 
+print "\nEstimate 1, only fit: "
 estimate_hit_point(threeD_points_space)
-
+print "\nEstimate 2, via time: "
+estimate_hit_point_via_time(threeD_points_space)
 #later we could then use 3 points to fit a curve in 3d space
 #scipy optimize curve fit:
 #http://python4mpia.github.io/fitting_data/least-squares-fitting.html
