@@ -41,12 +41,17 @@ class DvsDataHandler(object):
         height = 10
         width = 10
 
+        checkMin  = 0 
+        checkMax = 127
+
         #horizontal line
         for i in range(x-width,x+width):
-            self.image[i,y] -= 0.2
+            if checkMin < i < checkMax:
+                self.image[i,y] -= 0.2
 
         for i in range(y-height,y+height):
-            self.image[x,i] -= 0.2
+            if checkMin < i < checkMax:
+                self.image[x,i] -= 0.2
 
         #self.image[x-width:x+width] -= 0.1
         
