@@ -17,6 +17,10 @@ class DvsDataHandler(object):
         self.packageSize = 20
         self.packageStep = 20
 
+        self.play = True
+
+        self.debugPackageInfo = False
+
     def clear_image(self):
         #multiply all pixels with 0 so they are 0
         self.image *= 0
@@ -61,18 +65,36 @@ class DvsDataHandler(object):
     def calculatePackage(self):
         if self.calculator is not None:
             self.calculator.calculatePackage(self)
+
+    def calculateAllPackages(self):
+        c = True
+        while c:
+            try:
+                self.next_package(self.packageSize,self.packageStep)
+            except StopIteration:
+                c = False
+
+        print("all calculated")
         
-    def next_package(self,step=1000,frameJump=30):
+    def next_package(self,step=100,frameJump=100):
         self.clear_image()
         
         data = self.aedata
         
         start = self.packageStart
         end = start+step
+        if end >= len(data.x):
+            end = len(data.x) - 1
+
+        #stop if we are already at the end
+        if start >= len(data.x):
+            raise StopIteration
+
         #len(data.x)
         if(end < len(data.x)):    
-            print("package start index",start)
-            print("package timestamp start",data.ts[start])
+            if self.debugPackageInfo:
+                print("package start index",start)
+                print("package timestamp start",data.ts[start])
 
             n = start
             c = 0
@@ -89,18 +111,19 @@ class DvsDataHandler(object):
                     self.image[x,y] = +1 if data.t[n] else -1
                 self.doCalculation(x,y,data.t[n],data.ts[n])
 
-                print("package was ",n)
+                if self.debugPackageInfo:
+                    print("package was ",n)
                 #next package
                 c += 1
                 n = start + c
 
 
             start += frameJump
-        else:
-            raise Exception("end of data")
         
         self.packageStart = start
         self.calculatePackage()    
+
+        return True
 
         
 class DvsDataViewer(object):
@@ -113,7 +136,8 @@ class DvsDataViewer(object):
         self.im = plt.imshow(self.getImage(), cmap=plt.get_cmap('gray'), vmin=vmin, vmax=vmax, interpolation='none')
 
         
-        self.ani = animation.FuncAnimation(self.fig, self.updatefig, interval=20, blit=True)
+        #interval is time between new frames
+        self.ani = animation.FuncAnimation(self.fig, self.updatefig, interval=500, blit=True)
         plt.show()
         
 
@@ -124,10 +148,14 @@ class DvsDataViewer(object):
         return self.im,
     
     def getImage(self):
+        #only get next package if we are in play mode
+        if self.data.play is True:
+            #set next package in image
+            self.data.next_package(self.data.packageSize, self.data.packageStep)
+
         #rotate image for better visualization here
         return np.rot90(self.data.image,1)
         #return self.data.image
     
     def onClick(self,event):
-        #on every click on the plot, continue one frame
-        self.data.next_package(self.data.packageSize, self.data.packageStep)
+        self.data.play = not self.data.play
