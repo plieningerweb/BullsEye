@@ -277,7 +277,9 @@ def estimate_hit_point_via_time(threeD_points_space):
     def fit_x_over_t(t,x_0,v_x):
         return x_0 + v_x * t
     def fit_y_over_t(t,y_0,v_y):
-        return y_0 + v_y * t + 0.5 * g * t * t
+        #because g is given negative
+        #and we have y as "invertted axes", we need a negative again here 
+        return y_0 + v_y * t - 0.5 * g * t * t
     def fit_z_over_t(t,z_0,v_z):
         return z_0 + v_z * t
     
@@ -285,20 +287,74 @@ def estimate_hit_point_via_time(threeD_points_space):
     x_0 = result_fit_x_over_t[0][0]
     v_x = result_fit_x_over_t[0][1]
     
+
+
+    
     result_fit_y_over_t = optimize.curve_fit(fit_y_over_t, t, y)
     y_0 = result_fit_y_over_t[0][0]
     v_y = result_fit_y_over_t[0][1]
+
     
     result_fit_z_over_t = optimize.curve_fit(fit_z_over_t, t, z)
     z_0 = result_fit_z_over_t[0][0]
     v_z = result_fit_z_over_t[0][1]
-    
+
     t_a = - z_0 / v_z
     x_a = fit_x_over_t(t_a,x_0,v_x)
     y_a = fit_y_over_t(t_a,y_0,v_y)
     print "x_a = {}, y_a = {}, t_a = {}".format(x_a,y_a,t_a)
 
-    return (x_a,y_a,0)
+    plot = True
+    if plot is True:
+        #plot result
+        #time start
+        tmp_tt = np.linspace(0,t_a,num=100)
+
+        #==========================
+        #calculate perfect x
+        tmp_x = fit_x_over_t(tmp_tt,x_0,v_x)
+
+        fig = plt.figure()
+        fig.suptitle("x,y,z over time (us) and fitted curves", fontsize=20)
+
+        #num rows, num cols, fig num
+        ax = plt.subplot(221)
+        ax.set_title("x over time")
+        #plot x point over time
+        plt.scatter(tmp_tt, tmp_x, alpha=0.5)
+        #plot calculated x over time
+        plt.scatter(t,x,alpha=0.5,color='r')
+
+        #==========================
+        #calculate perfect y
+        tmp_y = fit_y_over_t(tmp_tt,y_0,v_y)
+
+        ax = plt.subplot(222)
+        ax.set_title("y over time")
+        #plot x point over time
+        plt.scatter(tmp_tt, tmp_y, alpha=0.5)
+        #plot calculated x over time
+        plt.scatter(t,y,alpha=0.5,color='r')
+
+        #==========================
+        #calculate perfect z
+        tmp_z = fit_z_over_t(tmp_tt,z_0,v_z)
+
+        ax = plt.subplot(223)
+        ax.set_title("z over time")
+        #plot x point over time
+        plt.scatter(tmp_tt, tmp_z, alpha=0.5)
+        #plot calculated x over time
+        plt.scatter(t,z,alpha=0.5,color='r')
+        plt.show()
+
+        #build numpy array with every colon x,y,z
+        estimated_flight = np.zeros((len(tmp_tt),3))
+        estimated_flight[:,0] = tmp_x
+        estimated_flight[:,1] = tmp_y
+        estimated_flight[:,2] = tmp_z
+
+    return ((x_a,y_a,0),estimated_flight)
 
 def threeD_points_estimateplane(data):
     def fix_plane(x,a,b,c):
@@ -320,7 +376,7 @@ def threeD_points_estimateplane(data):
     print("point,normal,d",point,normal,d)
 
 
-def threeD_points_plot3D(x,y,z,more=None):
+def threeD_points_plot3D(x,y,z,more=None, estflight=None):
     from mpl_toolkits.mplot3d import Axes3D
     import matplotlib.pyplot as plt
     import itertools
@@ -333,14 +389,17 @@ def threeD_points_plot3D(x,y,z,more=None):
     ax.set_ylabel('x Label')
 
     ax.set_xlim(0,200)
-    ax.set_ylim(-100,100)
-    ax.set_zlim(-100,100)
+    ax.set_ylim(-50,50)
+    ax.set_zlim(-75,75)
 
     colors = ['red','green','gray']
-    colors = itertools.cycle(["r", "orange", "g"])
+    colors = itertools.cycle(["r", "orange", "g","magenta","black"])
     for i in more:
         #first one is z achis
-        ax.scatter(i[2],i[0],i[1], color=next(colors) )
+        ax.scatter(i[2],i[0],-i[1], color=next(colors) )
+
+    if estflight is not None:
+        ax.scatter(estflight[:,2],estflight[:,0],-estflight[:,1], color="black")
 
     plt.show()
 
@@ -450,20 +509,20 @@ print "\nEstimate 2, via time: "
 estimate2 = estimate_hit_point_via_time(threeD_points_space)
 
 #plot z point over time
-threeD_points_plot2D(threeD_points_space[:,5],threeD_points_space[:,2])
+#threeD_points_plot2D(threeD_points_space[:,5],threeD_points_space[:,2])
 
 #point x point over time
-threeD_points_plot2D(threeD_points_space[:,5],threeD_points_space[:,0])
+#threeD_points_plot2D(threeD_points_space[:,5],threeD_points_space[:,0])
 
 #point y point over time
-threeD_points_plot2D(threeD_points_space[:,5],-threeD_points_space[:,1])
+#threeD_points_plot2D(threeD_points_space[:,5],-threeD_points_space[:,1])
 
 #point 3d points in 3d diagram
 #threeD_points_plot3D(threeD_points_space[:,2],threeD_points_space[:,0],threeD_points_space[:,1])
 
 #point 3d points in 3d diagram
 t = transformIntoDartKOS(threeD_points_space)
-threeD_points_plot3D(t[0],t[1],t[2],[(0,-50,0),estimate1,estimate2])
+threeD_points_plot3D(t[0],t[1],t[2],[(0,0,0),estimate1,estimate2[0]],estimate2[1])
 
 #not working!
 #threeD_points_estimateplane(threeD_points_space)
