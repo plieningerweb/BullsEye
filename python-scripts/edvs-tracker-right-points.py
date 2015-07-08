@@ -18,14 +18,24 @@ class Calculator():
         self.mean[1] = 30
 
         #make list with 15 elements
-        self.events = [0] * 15 
+        self.events = [0] * 30 
         self.track = False
+        self.trackStop = False
+        self.highEventCount = 0
         self.trackCount = 0
 
         self.crosses = []
 
         self.milliSec = 0
 
+        self.debugEvents = False 
+        self.debugEventsStartStop = False 
+        self.debugEventsMean = False
+        self.debugEventsTimestamp = False 
+
+
+    def pauseAndConfirmOutput(self):
+        a = raw_input("Continue by pressing enter")
     
     def calculate(self,recordProvider,x,y,sign,microtime):               
         #calculate mean
@@ -35,15 +45,42 @@ class Calculator():
         self.events.pop()
         #insert new event at top of list
         self.events.insert(0,microtime)
-        print("events are",self.events)
+        if self.debugEvents:
+            print("events are",self.events)
 
-        #check now if last 15 events were in last 5ms
+        #check now if last len(self.events) events were in last 5us
         diff = microtime - self.events[-1]
-        print("now - 15 event",self.events[-1],"now",microtime, "diff in us", diff)
+        if self.debugEventsStartStop:
+            print("now - 15 event",self.events[-1],"now",microtime, "diff in us", diff)
         if diff < 5000: 
-            self.track = True
-            print("found dart")
+            self.highEventCount += 1
+            if self.highEventCount > 30:
+                self.highEventCount = 30
 
+            if self.debugEventsStartStop:
+                print("found dart start", "highEventCount is",self.highEventCount)
+
+            if self.highEventCount >= 30 and not self.track:
+                self.track = True
+                if self.debugEventsStartStop:
+                    print("start tracking dart")
+                    self.pauseAndConfirmOutput()
+        else:
+            self.highEventCount -= 1
+            #min is zero
+            if self.highEventCount < 0:
+                self.highEventCount = 0
+
+            if self.debugEventsStartStop:
+                print("found dart stop")
+
+            if self.track is True and self.highEventCount == 0:
+                self.track = False 
+                if self.debugEventsStartStop:
+                    print("stop tracking dart")
+                    self.pauseAndConfirmOutput()
+
+        #if self.track and not self.trackStop and sign == 1:
         if self.track and sign == 1:
             self.trackCount += 1
 
@@ -55,37 +92,44 @@ class Calculator():
             #vector
             d = inp - self.mean
 
-            print("mean is",self.mean,"distance is",d)
+            if self.debugEventsMean:
+                print("mean is",self.mean,"distance is",d)
             
             #if just started tracking, converge fast
             if self.trackCount < 60:
-                print("low trackCount, move fast")
+                if self.debugEventsMean:
+                    print("low trackCount, move fast")
                 change = d * 0.05
 
             else:
-                print("high trackCount, move slow")
+                if self.debugEventsMean:
+                    print("high trackCount, move slow")
                 #only change slowly and ignore far away events
                 ab = np.sum(np.absolute(d))
+                if ab == 0:
+                    ab = 1
+
                 inv = (1 /(ab*ab))
-                print("change abs",ab,"inverse",inv)
+                if self.debugEventsMean:
+                    print("change abs",ab,"inverse",inv)
                 #max inv can be 1, otherwise we will move to far (and miss the event)
                 if inv > 1:
                     inv = 1
                 change = inv * d
 
-            print("change mean:",change)
+            if self.debugEventsMean:
+                print("change mean:",change)
             self.mean = self.mean + change
 
             #add markers every 1ms:
             #check if same millisecond as before
             millitime = self.microToMillisec(microtime)
             if self.milliSec != millitime:
-                print("new millisecond",millitime)
+                if self.debugEventsTimestamp:
+                    print("new millisecond",millitime)
                 self.milliSec = millitime
                 
-                print("add marker cross")
                 self.crosses.append((self.mean,microtime,millitime))
-                print("markers are",self.crosses)
         
         return self
 
@@ -105,71 +149,6 @@ class Calculator():
         recordProvider.drawCross( int(x),int(y))
 #        self.__init__()
 
-        
-        
-        
-#file: ../ITQ-2015-06-25/rechts-02.aedat
-#interesting events in file are from 5200 to 7960 
-#dart is coming from left and going on the upper half throuh the window
-#time from 314.37 to 314.49 seconds
-
-#datafile = '../ITQ-2015-06-25/rechts-02.aedat'
-#datafile = '../testdata-2015-07-02/sync33-calibrateandhit-slave.aedat'
-datafile = '../FinalSetup-2015-07-06/DVS128-2015-07-06T19-58-41+0200-0336-0.aedat'
-datafile = '../FinalSetup-2015-07-06/DVS128-2015-07-06T20-12-54+0200-0336-0.aedat'
-
-calculator = Calculator()
-#open file handler with data calculator and aedata file
-handler = DvsDataHandler(datafile,calculator)
-
-#set beginning event index to start with
-#handler.packageStart = 1799795 
-handler.packageStart = 0
-
-handler.packageSize = 300
-handler.packageStep = 300
-
-#visualize
-#click on window will show next package of events
-view = DvsDataViewer(handler)
-
-
-
-#idea one:
-#find active area with >=15 events in 10ms
-#set mode to track dart
-#now track the dart with a mean, where more distant events are weighted less strongo
-#calculate a "moving average of the centroid"
-
-#idea to match the two cameras:
-#calculate the points for each camera
-#compare the points including timestamp and match the points (same time, where is my marker?)
-#--> calculate 3d point
-#--> curve fit parabel in 3dimensions
-
-
-#left side
-#fisrt event: 1648
-#last event: 3742
-#datafile2 = '../ITQ-2015-06-25/links-02.aedat'
-#datafile2 = '../testdata-2015-07-02/sync33-calibrateandhit-master.aedat'
-datafile2 = '../FinalSetup-2015-07-06/DVS128-2015-07-06T19-58-38+0200-0123-0.aedat'
-datafile2 = '../FinalSetup-2015-07-06/DVS128-2015-07-06T20-12-56+0200-0123-0.aedat'
-
-calculator2 = Calculator()
-#open file handler with data calculator and aedata file
-handler2 = DvsDataHandler(datafile2,calculator2)
-
-#set beginning event index to start with
-#handler2.packageStart = 2864484 
-handler2.packageStart = 0
-
-handler2.packageSize = 300
-handler2.packageStep = 300
-
-#visualize
-#click on window will show next package of events
-view2 = DvsDataViewer(handler2)
 
 #view both stuff
 import matplotlib.pyplot as plt
@@ -189,25 +168,34 @@ class DvsDataViewerBoth(object):
         #rotate image for better visualization here
         return np.rot90(data.image,1)
         #return self.data.image
-    
+        
+        
+        
 
-viewBoth = DvsDataViewerBoth(view.data,view2.data)
+#more stuff to calculate result points
 
 
-#get markers of both
-print("markers1",calculator.crosses)
-print("markers2",calculator2.crosses)
+def getMatches(markers1,markers2):
+    #both files have same timestamps (snychronzied recording)
+    matches = []
+    for m in markers1:
+        for n in markers2:
+            if m[2] == n[2]:
+                matches.append([m[0],n[0],m[1],m[2]])
 
-#both files have same timestamps (snychronzied recording)
-matches = []
-for m in calculator.crosses:
-    print("m of markers1 is",m)
+    return matches
 
-    for n in calculator2.crosses:
-        if m[2] == n[2]:
-            print("match in same 1ms")
-            print("n is",n)
-            matches.append([m[0],n[0],m[1],m[2]])
+def checkMatchesOkay(p):
+    '''check if there is really only one match per millisecond'''
+    time = []
+    for i in p:
+        time.append(i[3])
+
+    lena = len(time)
+    lenUnique = len(set(time))
+    if lena != lenUnique:
+        raise Exception("error with matches: more than on match per millisecond! not unique: {}, unique: {}".format(lena,lenUnique))
+
 
 
 #convert to 3D point in space
@@ -268,6 +256,8 @@ def estimate_hit_point(threeD_points_space):
     y_a = result_fit_y_over_z[0][0]
     print "x_a = {}, y_a = {}".format(x_a,y_a)
 
+    return (x_a,y_a,0)
+
 
 def estimate_hit_point_via_time(threeD_points_space):
     """Input: Numpy array of points with space values, each a array:
@@ -275,6 +265,7 @@ def estimate_hit_point_via_time(threeD_points_space):
     #settings
     D = 180 #cm - distance between cameras and dart board
     g = -981 #cm/s^2 - acceleration due to gravity
+    g *= 0.5 #because s = 0.5*g*t*t
     
     
     x = threeD_points_space[:,0]
@@ -308,15 +299,174 @@ def estimate_hit_point_via_time(threeD_points_space):
     y_a = fit_y_over_t(t_a,y_0,v_y)
     print "x_a = {}, y_a = {}".format(x_a,y_a)
 
+    return (x_a,y_a,0)
+
+def threeD_points_estimateplane(data):
+    def fix_plane(x,a,b,c):
+        return a + b*x[0] + c*x[1]
+
+    A = np.column_stack((data[:,0], data[:,1], np.ones(data[:,0].size)))
+    c, resid,rank,sigma = np.linalg.lstsq(A,data[:,2])
+
+    print("plane is",c)
+
+    #z = ax + by +c
+    a = c[0]
+    b = c[1]
+    c = c[2]
+    point  = np.array([0.0, 0.0, c])
+    normal = np.array(np.cross([1,0,a], [0,1,b]))
+    d = -point.dot(normal)
+
+    print("point,normal,d",point,normal,d)
+
+
+def threeD_points_plot3D(x,y,z,more=None):
+    from mpl_toolkits.mplot3d import Axes3D
+    import matplotlib.pyplot as plt
+    import itertools
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(z,x,y)
+
+    ax.set_xlabel('z Label')
+    ax.set_zlabel('y Label')
+    ax.set_ylabel('x Label')
+
+    ax.set_xlim(0,200)
+    ax.set_ylim(-100,100)
+    ax.set_zlim(-100,100)
+
+    colors = ['red','green','gray']
+    colors = itertools.cycle(["r", "orange", "g"])
+    for i in more:
+        #first one is z achis
+        ax.scatter(i[2],i[0],i[1], color=next(colors) )
+
+    plt.show()
+
+def threeD_points_plot2D(x,y):
+    plt.scatter(x, y, alpha=0.5)
+    plt.show()
+
+def transformIntoDartKOS(data):
+    D = 180 #cm - distance between cameras and dart board
+    z = (data[:,2]+data[:,3])/2 + D
+    y = -(data[:,1])
+    x = data[:,0]
+    return (x,y,z)
+
+
+
+#file: ../ITQ-2015-06-25/rechts-02.aedat
+#interesting events in file are from 5200 to 7960 
+#dart is coming from left and going on the upper half throuh the window
+#time from 314.37 to 314.49 seconds
+
+#datafile = '../ITQ-2015-06-25/rechts-02.aedat'
+#datafile = '../testdata-2015-07-02/sync33-calibrateandhit-slave.aedat'
+datafile = '../FinalSetup-2015-07-06/DVS128-2015-07-06T19-58-41+0200-0336-0.aedat'
+datafile = '../FinalSetup-2015-07-06/DVS128-2015-07-06T20-12-54+0200-0336-0.aedat'
+
+calculator = Calculator()
+#open file handler with data calculator and aedata file
+handler = DvsDataHandler(datafile,calculator)
+
+#set beginning event index to start with
+#handler.packageStart = 1799795 
+handler.packageStart = 0
+
+handler.packageSize = 300
+handler.packageStep = 300
+handler.debugPackageInfo = False
+
+#configure what animations you want to see
+#to pause animation, click on it
+
+#show camera1 dart animation
+showView1 = False 
+#show camera2 dart animation
+showView2 = False
+
+#compare both results in two windows
+showView3 = False
+
+
+if showView1:
+    view = DvsDataViewer(handler)
+else:
+    handler.calculateAllPackages()
+
+
+#left side
+#fisrt event: 1648
+#last event: 3742
+#datafile2 = '../ITQ-2015-06-25/links-02.aedat'
+#datafile2 = '../testdata-2015-07-02/sync33-calibrateandhit-master.aedat'
+datafile2 = '../FinalSetup-2015-07-06/DVS128-2015-07-06T19-58-38+0200-0123-0.aedat'
+datafile2 = '../FinalSetup-2015-07-06/DVS128-2015-07-06T20-12-56+0200-0123-0.aedat'
+
+calculator2 = Calculator()
+#open file handler with data calculator and aedata file
+handler2 = DvsDataHandler(datafile2,calculator2)
+
+#set beginning event index to start with
+#handler2.packageStart = 2864484 
+handler2.packageStart = 0
+
+handler2.packageSize = 300
+handler2.packageStep = 300
+
+#visualize
+#click on window will show next package of events
+if showView2:
+    view2 = DvsDataViewer(handler2)
+else:
+    handler2.calculateAllPackages()
+
+    
+if showView3 is True:
+    viewBoth = DvsDataViewerBoth(handler,handler2)
+
+#get markers of both
+print("markers1",calculator.crosses)
+print("markers2",calculator2.crosses)
+
+matches = getMatches(calculator.crosses,calculator2.crosses)
+checkMatchesOkay(matches)
+#matches contain: tuple of mean, microtime, millitime
+
+#remove some matches from beginning and end, because there the tracking is not really exact
+matches = matches[30:-20]
 
 threeD_points_space = convert_px_to_space_3D(matches)
+#print threeD_points_space
 
-print threeD_points_space
+print("number of matches",len(matches))
+print("number of 3d points",len(threeD_points_space[:,0]))
 
 print "\nEstimate 1, only fit: "
-estimate_hit_point(threeD_points_space)
+estimate1 = estimate_hit_point(threeD_points_space)
 print "\nEstimate 2, via time: "
-estimate_hit_point_via_time(threeD_points_space)
-#later we could then use 3 points to fit a curve in 3d space
-#scipy optimize curve fit:
-#http://python4mpia.github.io/fitting_data/least-squares-fitting.html
+estimate2 = estimate_hit_point_via_time(threeD_points_space)
+
+#plot z point over time
+#threeD_points_plot2D(threeD_points_space[:,5],threeD_points_space[:,2])
+
+#point x point over time
+#threeD_points_plot2D(threeD_points_space[:,5],threeD_points_space[:,0])
+
+#point y point over time
+#threeD_points_plot2D(threeD_points_space[:,5],-threeD_points_space[:,1])
+
+#point 3d points in 3d diagram
+#threeD_points_plot3D(threeD_points_space[:,2],threeD_points_space[:,0],threeD_points_space[:,1])
+
+#point 3d points in 3d diagram
+t = transformIntoDartKOS(threeD_points_space)
+threeD_points_plot3D(t[0],t[1],t[2],[(0,-50,0),estimate1,estimate2])
+
+#not working!
+#threeD_points_estimateplane(threeD_points_space)
+
+
