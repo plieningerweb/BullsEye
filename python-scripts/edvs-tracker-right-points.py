@@ -264,8 +264,7 @@ def estimate_hit_point_via_time(threeD_points_space):
     point: (x,y,z,z_prime,microtime,millitime)"""
     #settings
     D = 180 #cm - distance between cameras and dart board
-    g = -981 #cm/s^2 - acceleration due to gravity
-    g *= 0.5 #because s = 0.5*g*t*t
+    g = -981e-12 #cm/s^2 - acceleration due to gravity
     
     
     x = threeD_points_space[:,0]
@@ -278,7 +277,7 @@ def estimate_hit_point_via_time(threeD_points_space):
     def fit_x_over_t(t,x_0,v_x):
         return x_0 + v_x * t
     def fit_y_over_t(t,y_0,v_y):
-        return y_0 + v_y * t + g * t * t
+        return y_0 + v_y * t + 0.5 * g * t * t
     def fit_z_over_t(t,z_0,v_z):
         return z_0 + v_z * t
     
@@ -297,7 +296,7 @@ def estimate_hit_point_via_time(threeD_points_space):
     t_a = - z_0 / v_z
     x_a = fit_x_over_t(t_a,x_0,v_x)
     y_a = fit_y_over_t(t_a,y_0,v_y)
-    print "x_a = {}, y_a = {}".format(x_a,y_a)
+    print "x_a = {}, y_a = {}, t_a = {}".format(x_a,y_a,t_a)
 
     return (x_a,y_a,0)
 
@@ -384,7 +383,7 @@ handler.debugPackageInfo = False
 #to pause animation, click on it
 
 #show camera1 dart animation
-showView1 = False 
+showView1 = True
 #show camera2 dart animation
 showView2 = False
 
@@ -451,13 +450,13 @@ print "\nEstimate 2, via time: "
 estimate2 = estimate_hit_point_via_time(threeD_points_space)
 
 #plot z point over time
-#threeD_points_plot2D(threeD_points_space[:,5],threeD_points_space[:,2])
+threeD_points_plot2D(threeD_points_space[:,5],threeD_points_space[:,2])
 
 #point x point over time
-#threeD_points_plot2D(threeD_points_space[:,5],threeD_points_space[:,0])
+threeD_points_plot2D(threeD_points_space[:,5],threeD_points_space[:,0])
 
 #point y point over time
-#threeD_points_plot2D(threeD_points_space[:,5],-threeD_points_space[:,1])
+threeD_points_plot2D(threeD_points_space[:,5],-threeD_points_space[:,1])
 
 #point 3d points in 3d diagram
 #threeD_points_plot3D(threeD_points_space[:,2],threeD_points_space[:,0],threeD_points_space[:,1])
