@@ -279,7 +279,7 @@ def estimate_hit_point_via_time(threeD_points_space):
     def fit_y_over_t(t,y_0,v_y):
         #because g is given negative
         #and we have y as "invertted axes", we need a negative again here 
-        return y_0 + v_y * t - 0.5 * g * t * t
+        return y_0 + v_y * t + 0.5 * g * t * t
     def fit_z_over_t(t,z_0,v_z):
         return z_0 + v_z * t
     
@@ -396,10 +396,10 @@ def threeD_points_plot3D(x,y,z,more=None, estflight=None):
     colors = itertools.cycle(["r", "orange", "g","magenta","black"])
     for i in more:
         #first one is z achis
-        ax.scatter(i[2],i[0],-i[1], color=next(colors) )
+        ax.scatter(i[2],i[0],i[1], color=next(colors) )
 
     if estflight is not None:
-        ax.scatter(estflight[:,2],estflight[:,0],-estflight[:,1], color="black")
+        ax.scatter(estflight[:,2],estflight[:,0],estflight[:,1], color="black")
 
     plt.show()
 
@@ -410,7 +410,7 @@ def threeD_points_plot2D(x,y):
 def transformIntoDartKOS(data):
     D = 180 #cm - distance between cameras and dart board
     z = (data[:,2]+data[:,3])/2 + D
-    y = -(data[:,1])
+    y = (data[:,1])
     x = data[:,0]
     return (x,y,z)
 
