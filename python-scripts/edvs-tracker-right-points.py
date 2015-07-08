@@ -227,7 +227,7 @@ Output: Numpy array of points with space values, each a array:
         alpha_l = angle_per_px * (point[1][1] - center_offset_px)
         #convert to space
         d_l = d / ( 1. + (np.tan(delta-alpha_l)/np.tan(delta-bita_r)) )
-        x = d_l - d
+        x = d_l - d/2
         y = np.tan(delta - alpha_l) * d_l - H
         z = np.tan(gamma_l) * np.cos(alpha_l) * d_l / np.cos(delta - alpha_l)
         z_prime = - np.tan(gamma_r) * np.cos(bita_r) * (d-d_l) / np.cos(delta - bita_r)
@@ -264,7 +264,7 @@ def estimate_hit_point_via_time(threeD_points_space):
     point: (x,y,z,z_prime,microtime,millitime)"""
     #settings
     D = 180 #cm - distance between cameras and dart board
-    g = -981e-12 #cm/s^2 - acceleration due to gravity
+    g = -981e-12 #cm/(micro s)^2 - acceleration due to gravity
     
     
     x = threeD_points_space[:,0]
@@ -383,7 +383,7 @@ handler.debugPackageInfo = False
 #to pause animation, click on it
 
 #show camera1 dart animation
-showView1 = True
+showView1 = False
 #show camera2 dart animation
 showView2 = False
 
