@@ -206,7 +206,7 @@ Input: List of points with pixels values, each a tuple:
 Output: Numpy array of points with space values, each a array:
     point: (x,y,z,z_prime,microtime,millitime)"""
     #settings
-    angle_per_px = 0.36 #degrees
+    angle_per_px = 0.3622 #degrees
     width_px = 128
     delta = 45 #degrees
     d = 130 #cm
@@ -221,18 +221,18 @@ Output: Numpy array of points with space values, each a array:
         #point: ([R.xp,R.yp],[L.xp,L.yp])
         #right camera
         gamma_r = angle_per_px * (point[0][0] - center_offset_px)
-        bita_r = angle_per_px * (point[0][1] - center_offset_px)
+        bita_r = - angle_per_px * (point[0][1] - center_offset_px)
         #left camera
         gamma_l = angle_per_px * (point[1][0] - center_offset_px)
-        alpha_l = angle_per_px * (point[1][1] - center_offset_px)
+        alpha_l = - angle_per_px * (point[1][1] - center_offset_px)
         #convert to space
         d_l = d / ( 1. + (np.tan(delta-alpha_l)/np.tan(delta-bita_r)) )
         x = d_l - d/2
         y = np.tan(delta - alpha_l) * d_l - H
-        z = np.tan(gamma_l) * np.cos(alpha_l) * d_l / np.cos(delta - alpha_l)*2
-        z_prime = - np.tan(gamma_r) * np.cos(bita_r) * (d-d_l) / np.cos(delta - bita_r)*2
+        z = np.tan(gamma_l) * np.cos(alpha_l) * d_l / np.cos(delta - alpha_l)
+        z_prime = - np.tan(gamma_r) * np.cos(bita_r) * (d-d_l) / np.cos(delta - bita_r)
         #save
-        threeD_points_space.append([-x[0],-y[0],z[0],z_prime[0],point[2],point[3]])
+        threeD_points_space.append([x[0],y[0],z[0],z_prime[0],point[2],point[3]])
     
     return np.array(threeD_points_space)
 
@@ -287,8 +287,6 @@ def estimate_hit_point_via_time(threeD_points_space):
     x_0 = result_fit_x_over_t[0][0]
     v_x = result_fit_x_over_t[0][1]
     
-
-
     
     result_fit_y_over_t = optimize.curve_fit(fit_y_over_t, t, y)
     y_0 = result_fit_y_over_t[0][0]
@@ -530,8 +528,8 @@ if showView3 is True:
     viewBoth = DvsDataViewerBoth(handler,handler2)
 
 #get markers of both
-print("markers1",calculator.crosses)
-print("markers2",calculator2.crosses)
+#print("markers1",calculator.crosses)
+#print("markers2",calculator2.crosses)
 
 matches = getMatches(calculator.crosses,calculator2.crosses)
 checkMatchesOkay(matches)
@@ -548,10 +546,11 @@ print("number of 3d points",len(threeD_points_space[:,0]))
 
 print "\nEstimate 1, only fit: "
 estimate1 = estimate_hit_point(threeD_points_space)
-print "\nEstimate 2, via time: "
-estimate2 = estimate_hit_point_via_time(threeD_points_space)
 print "\nEstimate 2, via time without gravity: "
 estimate_hit_point_via_time_without_gravity(threeD_points_space)
+print "\nEstimate 3, via time with gravity: "
+estimate2 = estimate_hit_point_via_time(threeD_points_space)
+print "\n\n"
 
 #plot z point over time
 #threeD_points_plot2D(threeD_points_space[:,5],threeD_points_space[:,2])

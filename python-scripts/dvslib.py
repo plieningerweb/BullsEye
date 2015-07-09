@@ -137,7 +137,7 @@ class DvsDataViewer(object):
 
         
         #interval is time between new frames
-        self.ani = animation.FuncAnimation(self.fig, self.updatefig, interval=500, blit=True)
+        self.ani = animation.FuncAnimation(self.fig, self.updatefig, interval=150, blit=True)
         plt.show()
         
 
