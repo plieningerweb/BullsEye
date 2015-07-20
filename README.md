@@ -3,6 +3,8 @@ Bull's Eye - Never miss a shot
 
 Idea: Track a dart in realtime and move bullseye to the calculated target of the dart. Therefore dart will always hit the center!
 
+![Image](presentation/estimated-3d.png?raw=true)
+
 ##### Hardware: DVS / eDVS
 
 Two dynamic vision sensors (DVS) or two embedded dynamic vision sensors (eDVS) connected with a cable to sync microtimestamp
@@ -51,11 +53,19 @@ To synchronize the cameras after plugging them in, press '0' in the AEViewer win
 15. Edit ./python-scripts/edvs-tracker-3D.py and change `datafile = 'pathtofilename1.aedat' and datfile2 = 'pathtofilename2.aedat'
 16. run `run python2 ./python-scripts/edvs-tracker-3D.py`
 17. to pause visualisation, click in image, to continue click again
+
+![Image](presentation/track-left-right.png?raw=true)
+
 18. you should finally see the estimated flight curve and target
+
+![Image](presentation/estimated-3d.png?raw=true)
+
 
 ## Setup
 
-We used this sketch to setup our cameras. In an advanced version the software shoudl autocalibrate the cameras. 
+We used this sketch to setup our cameras. In an advanced version the software shoudl autocalibrate the cameras.
+
+![Image](presentation/setup-sketch.png?raw=true)
 
 ## Concolusions and Outlook
 
@@ -63,4 +73,11 @@ The shown example can track the dart, but is still not accurate enough. Addition
 
 ## Further Information
 
-This project was part of a class work at Technical University of Munich (TUM), and in the subfolder `presentations` you can find further information)
+This project was part of a class work at Technical University of Munich (TUM), and in the subfolder `presentation` you can find further information)
+- [Presentation PDF](presentation/BullsEye-SS2015.pdf?raw=true)
+- [Report PDF](presentation/BullsEye-SS2015-Report.pdf?raw=true)
+- Neural Engineering: Implants, Interfaces and Algorithms SS2015 ([check class website at TUM](http://ne.nst.ei.tum.de/))
+
+The 3D curve was fitted from 3 graphs (x,y,z over time), which were used to calculate the velocity in x,y and z direction to estimate the target
+
+![Image](presentation/fitted-curves.png?raw=true)
